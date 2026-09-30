@@ -1,56 +1,53 @@
-# Welcome to your Expo app 👋
+# Job Tracker Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native (Expo) client for [job-tracker](https://github.com/otaldoneto/job-tracker), the Kanban-style job
+application tracker. Same data, same backend, now on iOS and Android — list your applications grouped by status,
+and create, edit or delete them from your phone.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- **Expo** + **React Native** — single codebase for iOS and Android
+- **TypeScript**
+- **Expo Router** — file-based routing (scaffolded by default, not yet used beyond the single screen)
 
-   ```bash
-   npm install
-   ```
+This app has no backend of its own: it's a client for the [job-tracker](https://github.com/otaldoneto/job-tracker)
+REST API.
 
-2. Start the app
+## Running it locally
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requires the job-tracker web project running first (its Postgres container + `npm run dev`), since this app just
+consumes its API.
 
 ```bash
-npm run reset-project
+npm install
+npm run ios       # opens the iOS Simulator
+npm run android   # opens an Android emulator
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Features
 
-### Other setup steps
+- Lists applications grouped by status (mirrors the web app's Kanban columns)
+- Create, edit and delete applications from the app
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Technical decisions
 
-## Learn more
+**React Native with Expo, not a native Swift/Kotlin app.** A single TypeScript codebase covers both iOS and
+Android, and it reuses the React knowledge already applied throughout this portfolio. Trade-off: less control over
+platform-specific native APIs, not a concern for a REST API client like this one.
 
-To learn more about developing your project with Expo, look at the following resources:
+**The Android emulator needs a different API host than iOS.** The iOS Simulator shares the Mac's network stack, so
+`localhost:3000` reaches the job-tracker server directly. The Android emulator runs as its own virtual machine —
+`localhost` there refers to the emulator itself, not the host machine. `10.0.2.2` is the special alias Android's
+emulator provides for the host's `localhost`, so the API base URL branches on `Platform.OS`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**The edit modal is remounted by `key`, not patched with `useEffect`.** Its form fields start from `useState(initialValues?.company ?? '')`,
+which only reads that initial value once. Reusing the same modal instance across different cards left it stuck
+showing whichever application's data it saw first. Giving it `key={editingApplication?.id}` forces React to tear
+down and recreate the component whenever the target application changes, resetting its internal state for free.
 
-## Join the community
+## Limitations
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- No authentication — same trust model as the web app's own API.
+- The API host is hardcoded for local development (`localhost` / `10.0.2.2`), not configurable for a deployed
+  backend.
+- No drag-and-drop reordering here; status changes and reordering still happen on the web app.
