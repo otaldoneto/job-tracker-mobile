@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet } from 'react-native';
+import { ActivityIndicator, SectionList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { Application, fetchApplications } from '@/lib/api';
-import { STATUS_LABELS } from '@/lib/status';
+import { STATUS_LABELS, STATUSES } from '@/lib/status';
 
 export default function HomeScreen() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -20,6 +20,11 @@ export default function HomeScreen() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const sections = STATUSES.map((status) => ({
+    title: STATUS_LABELS[status],
+    data: applications.filter((application) => application.status === status),
+  }));
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -28,17 +33,20 @@ export default function HomeScreen() {
         {isLoading && <ActivityIndicator style={styles.spinner} />}
         {error && <ThemedText type="small">{error}</ThemedText>}
 
-        <FlatList
-          data={applications}
+        <SectionList
+          sections={sections}
           keyExtractor={(application) => application.id}
           contentContainerStyle={styles.list}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <ThemedText type="smallBold" style={styles.sectionHeader}>
+              {section.title} ({section.data.length})
+            </ThemedText>
+          )}
           renderItem={({ item }) => (
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">{item.company}</ThemedText>
               <ThemedText type="small">{item.role}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {STATUS_LABELS[item.status]}
-              </ThemedText>
             </ThemedView>
           )}
         />
@@ -60,12 +68,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
   },
   list: {
-    gap: Spacing.three,
+    gap: Spacing.two,
     paddingBottom: Spacing.four,
+  },
+  sectionHeader: {
+    marginTop: Spacing.three,
+    marginBottom: Spacing.two,
   },
   card: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.one,
+    marginBottom: Spacing.two,
   },
 });
